@@ -238,9 +238,11 @@ def search_commit_history(commits, query):
                 }
             )
     return results
-def search_commit_diffs(repository, commits, query):
-    """Search commit patches for matching text."""
-    query_lower = query.lower()
+def search_commit_diffs(repository, commits, query, limit=10):
+    """Search commit patches and return a limited set of matching evidence."""
+    query_lower = query.strip().lower()
+    if not query_lower:
+        return []
     results = []
     for commit in commits:
         try:
@@ -261,7 +263,7 @@ def search_commit_diffs(repository, commits, query):
                         "Full hash": commit.hexsha,
                     }
                 )
-                if len(results) >= 200:
+                if len(results) >= limit:
                     return results
     return results
 # --------------------------------------------------
@@ -275,7 +277,7 @@ repo_path = st.text_input(
 analyze = st.button(
     "Analyze Repository",
     type="primary",
-    use_container_width=True,
+    width="stretch",
 )
 if "repository_path" not in st.session_state:
     st.session_state.repository_path = ""
@@ -338,7 +340,7 @@ st.header("🕒 Recent Commit History")
 commit_df = get_commit_table(commits)
 st.dataframe(
     commit_df,
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 # --------------------------------------------------
@@ -385,7 +387,7 @@ if changed_df.empty:
 else:
     st.dataframe(
         changed_df,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 st.subheader("🔬 Actual Code Diff")
@@ -518,14 +520,18 @@ if submitted:
                 total_matches += len(history_matches)
             else:
                 st.info("No matching commit messages were found.")
-        if search_diffs:
-            st.subheader("🧩 Commit Diff Evidence")
-            diff_matches = search_commit_diffs(
-                repo,
-                commits,
-                query,
-            )
+                if search_diffs:
+                    st.subheader("🧩 Commit Diff Evidence")
+                    diff_matches = search_commit_diffs(
+                    repo,
+                    commits,
+                    query,
+                    limit=10,
+                    )
             if diff_matches:
+                st.caption(
+                    f"Showing {len(diff_matches)} commit-diff evidence item(s)."
+                )
                 st.dataframe(
                     pd.DataFrame(diff_matches),
                     width="stretch",
@@ -537,7 +543,7 @@ if submitted:
         st.divider()
         if total_matches:
             st.success(
-                f"Found {total_matches} matching evidence item(s)."
+                f"Found {total_matches} matching evidence item(s) across all enabled search sections."
             )
             st.info(
                 "These matches show where the searched text occurs. "
