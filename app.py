@@ -470,6 +470,8 @@ with st.form("evidence_search_form"):
         type="primary",
     )
 if submitted:
+   
+    
     query = query.strip()
     if not query:
         st.warning("Enter a word or phrase to search.")
@@ -484,12 +486,13 @@ if submitted:
                 query,
             )
             if source_matches:
-                st.dataframe(
-                    pd.DataFrame(source_matches),
-                    use_container_width=True,
-                    hide_index=True,
-                )
-                total_matches += len(source_matches)
+                st.success(f"Found {len(source_matches)} source-code match(es).")
+                for match in source_matches:
+                    st.markdown(f"**File:** `{match['File']}`")
+                    st.write(f"**Line:** {match['Line']}")
+                    st.code(match["Code"], language="python")
+                    st.divider()
+                    total_matches += len(source_matches)
             else:
                 st.info("No matching source-code lines were found.")
         if search_history:
@@ -498,6 +501,7 @@ if submitted:
                 commits,
                 query,
             )
+            
             if history_matches:
                 for item in history_matches:
                     with st.expander(
@@ -524,7 +528,7 @@ if submitted:
             if diff_matches:
                 st.dataframe(
                     pd.DataFrame(diff_matches),
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True,
                 )
                 total_matches += len(diff_matches)
